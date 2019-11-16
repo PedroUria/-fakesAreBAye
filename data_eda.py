@@ -13,6 +13,8 @@ with open(DATA_DIR + "output_review_yelpResData_NRYRcleaned.txt", "r") as s:
 # The first review can be found here: https://www.yelp.com/menu/alinea-chicago/item/lamb (ctf+f: Willy Wonka)
 
 labels_distrib = np.unique(data_restaurants["Fake"].values, return_counts=True)
+print("-" * 82)
 print("The distribution of real (N) vs fake (Y) reviews is -------->",
       labels_distrib[0][0], ":", labels_distrib[1][0], "|",
       labels_distrib[0][1], ":", labels_distrib[1][1])
+print("-" * 82)
