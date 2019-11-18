@@ -45,8 +45,12 @@ SEQ_LEN = 100
 N_LAYERS = 4
 N_FEATURES = 3
 
-features_bert_train = np.load("saved_features_BERT/features_train_{}layers_{}features_{}len.npy".format(N_LAYERS, N_FEATURES, SEQ_LEN))
-features_bert_test = np.load("saved_features_BERT/features_test_{}layers_{}features_{}len.npy".format(N_LAYERS, N_FEATURES, SEQ_LEN))
+features_bert_train = np.load("saved_features_BERT_sigmoid/features_train_{}layers_{}features_{}len.npy".format(N_LAYERS, N_FEATURES, SEQ_LEN))
+features_bert_test = np.load("saved_features_BERT_sigmoid/features_test_{}layers_{}features_{}len.npy".format(N_LAYERS, N_FEATURES, SEQ_LEN))
+print("BERT cls weights:")
+with open("saved_models_BERT_sigmoid/BERT_last_weights{}layers_{}features_{}len.txt".format(N_LAYERS, N_FEATURES,
+                                                                                            SEQ_LEN), "r") as s:
+    print(s.read())
 
 # This is a check to make sure the split made here for the Behaviour features matches the one made for BERT on BERT_features.py
 # import torch
