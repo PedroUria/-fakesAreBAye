@@ -7,7 +7,7 @@ import torch.nn as nn
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import accuracy_score, recall_score, confusion_matrix
+from sklearn.metrics import accuracy_score, recall_score, precision_score, confusion_matrix
 from transformers.modeling_bert import BertForSequenceClassification
 from transformers.tokenization_bert import BertTokenizer
 from transformers import AdamW, WarmupLinearSchedule
@@ -21,19 +21,20 @@ np.random.seed(SEED)
 random.seed(SEED)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
-TRAIN = False
+TRAIN, LOAD_MODEL, SAVE_MODEL = False, True, False
 FINAL_TEST = True
-EXTRACT_FEATURES = False
+EXTRACT_FEATURES = True
 
 # %% --------------------------------------- Hyper-Parameters ----------------------------------------------------------
 SEQ_LEN = 100
 N_LAYERS = 4
 N_FEATURES = 3
 
-EPOCHS = 1
+EPOCHS = 10
 LR = 1e-5
 EPS = 1e-8
-BATCH_SIZE = 128
+BATCH_SIZE = 32
+CLASS_WEIGHTS = [0.1, 0.9]  # First element for real, second element for fake
 WARM_UP_STEPS = 0
 GRADIENT_ACCUMULATION_STEPS = 1
 
@@ -104,16 +105,17 @@ x_test, mask_test, y_test = torch.LongTensor(x_test), torch.FloatTensor(mask_tes
 model = BERTForFeatures().to(device)
 if "saved_models_BERT" not in os.listdir():
     os.mkdir("saved_models_BERT")
-try:
-    model.load_state_dict(torch.load("saved_models_BERT/BERT_{}layers_{}features_{}len.pt".format(N_LAYERS, N_FEATURES, SEQ_LEN)))
-    print("A previous model was loaded successfully!")
-except:
-    print("Couldn't load model... Starting from scratch!" if TRAIN else "No model has been found... testing is kinda meaningless!")
+if LOAD_MODEL:
+    try:
+        model.load_state_dict(torch.load("saved_models_BERT/BERT_{}layers_{}features_{}len.pt".format(N_LAYERS, N_FEATURES, SEQ_LEN)))
+        print("A previous model was loaded successfully!")
+    except:
+        print("Couldn't load model... Starting from scratch!" if TRAIN else "No model has been found... testing is kinda meaningless!")
 if TRAIN:
     optimizer = AdamW(model.parameters(), lr=LR, eps=EPS)
     # scheduler = WarmupLinearSchedule(optimizer, warmup_steps=WARM_UP_STEPS,
     #                                  t_total=len(x_train) // GRADIENT_ACCUMULATION_STEPS * EPOCHS)
-    criterion = nn.CrossEntropyLoss(torch.FloatTensor([0.1322857932, 0.8677142068]).to(device))
+    criterion = nn.CrossEntropyLoss(torch.FloatTensor(CLASS_WEIGHTS).to(device))
 
 # %% -------------------------------------- Training Loop ----------------------------------------------------------
 if TRAIN:
@@ -140,10 +142,13 @@ if TRAIN:
                 loss_train += loss.cpu().item()
                 steps_train += 1
                 pbar.update(1)
-                pbar.set_postfix_str("Training Loss: {:.5f}".format(loss_train / steps_train))
                 labels_pred += list(np.argmax(logits.detach().cpu().numpy(), axis=1).reshape(-1))
                 labels_real += list(y_train[inds].numpy().reshape(-1))
+                pbar.set_postfix_str("Training Loss: {:.5f}, Precision: {:.2f}, Recall: {:.2f}".format(
+                    loss_train / steps_train, precision_score(labels_real, labels_pred), recall_score(labels_real, labels_pred))
+                )
         acc_train = accuracy_score(labels_real, labels_pred)
+        prec_train = precision_score(labels_real, labels_pred)
         recall_train = recall_score(labels_real, labels_pred)
         cf_train = confusion_matrix(labels_real, labels_pred)
 
@@ -159,20 +164,23 @@ if TRAIN:
                     loss_test += loss.cpu().item()
                     steps_test += 1
                     pbar.update(1)
-                    pbar.set_postfix_str("Testing Loss: {:.5f}".format(loss_test / steps_test))
                     labels_pred += list(np.argmax(logits.detach().cpu().numpy(), axis=1).reshape(-1))
                     labels_real += list(y_test[inds].numpy().reshape(-1))
+                    pbar.set_postfix_str("Testing Loss: {:.5f}, Precision: {:.2f}, Recall: {:.5f}".format(
+                        loss_train / steps_train, precision_score(labels_real, labels_pred), recall_score(labels_real, labels_pred))
+                    )
         acc_test = accuracy_score(labels_real, labels_pred)
+        prec_test = precision_score(labels_real, labels_pred)
         recall_test = recall_score(labels_real, labels_pred)
         cf_test = confusion_matrix(labels_real, labels_pred)
 
-        print("Epoch {} | Train Loss {:.5f}, Train Acc {:.2f} Train Recall {:.2f}"
-              " - Test Loss {:.5f}, Test Acc {:.2f}, Test Recall {:.2f}".format(
-               epoch, loss_train / steps_train, acc_train, recall_train, loss_test / steps_test, acc_test, recall_test))
+        print("Epoch {} | Train Loss {:.5f}, Acc {:.2f}, Precision {:.2f}, Recall {:.2f}"
+              " - Test Loss {:.5f}, Acc {:.2f}, Precision {:.2f}, Recall {:.2f}".format(
+               epoch, loss_train / steps_train, acc_train, prec_train, recall_train, loss_test / steps_test, acc_test, prec_test, recall_test))
         print(cf_train)
         print(cf_test)
 
-        if recall_test > recall_test_best:
+        if recall_test > recall_test_best and SAVE_MODEL:
             torch.save(model.state_dict(), "saved_models_BERT/BERT_{}layers_{}features_{}len.pt".format(N_LAYERS, N_FEATURES, SEQ_LEN))
             print("A new model has been saved!")
             recall_test_best = recall_test
@@ -195,8 +203,11 @@ if FINAL_TEST:
 
 # %% ----------------------------------------- Save Features -----------------------------------------------------------
 if EXTRACT_FEATURES:
-    if "saved_features_Bert" not in os.listdir():
+    if "saved_features_BERT" not in os.listdir():
         os.mkdir("saved_features_BERT")
+    print("Saving BERT last cls weights...")
+    with open("BERT_last_weights{}layers_{}features_{}len.txt".format(N_LAYERS, N_FEATURES, SEQ_LEN), "w") as s:
+        s.write(str(model.cls.weight.data.cpu().numpy()))
     print("Extracting and saving features...")
     features_train, features_test = get_features(x_train, mask_train, model), get_features(x_test, mask_test, model)
     np.save("saved_features_BERT/features_train_{}layers_{}features_{}len.npy".format(N_LAYERS, N_FEATURES, SEQ_LEN), features_train)
