@@ -11,6 +11,7 @@ np.random.seed(SEED)
 random.seed(SEED)
 
 # %% --------------------------------------- Behaviour Features --------------------------------------------------------
+# Maximum Number of Reviews in the same day per Reviewer  -> Checked, it's correct
 test12 = data_restaurants.groupby(['ReviewerID', 'Date']).count()
 revz = [i[0] for i in test12.index]
 revz = list(set(revz))
@@ -20,12 +21,18 @@ for Id in range(len(revz)):
     max_dict[revz[Id]] = maxList[Id]
 new_thing = data_restaurants['ReviewerID'].apply(lambda x: max_dict[x])
 data_restaurants['MNR'] = new_thing
+
+# Average Review Length per Reviewer --> Checked, it's correct
 data_restaurants['WC'] = data_restaurants['Review'].apply(lambda x: len(x.split(' ')))
 word_avg = data_restaurants.groupby('ReviewerID').mean()['WC']
 data_restaurants['avg_revL'] = data_restaurants['ReviewerID'].apply(lambda x: word_avg[x])
+
+# Percentage of 4-5 star-reviews per user  --> Checked, it's correct
 data_restaurants['posR'] = data_restaurants['Rating'].apply(lambda x: 1 if x >= 4 else 0)
 posR = data_restaurants.groupby('ReviewerID').mean()['posR']
 data_restaurants['avg_posR'] = data_restaurants['ReviewerID'].apply(lambda x: posR[x])
+
+# Reviewer Deviation  -> A bit trickier to check but it looks correct, and I also interpreted it this way
 ProdPivot = data_restaurants.pivot_table(index='Date', columns='ProductID', values='Rating')
 avProdR = ProdPivot.mean()
 data_restaurants['exp_Product_Rating'] = data_restaurants['ProductID'].apply(lambda x: avProdR[x])
@@ -48,9 +55,16 @@ N_FEATURES = 3
 features_bert_train = np.load("saved_features_BERT_sigmoid/features_train_{}layers_{}features_{}len.npy".format(N_LAYERS, N_FEATURES, SEQ_LEN))
 features_bert_test = np.load("saved_features_BERT_sigmoid/features_test_{}layers_{}features_{}len.npy".format(N_LAYERS, N_FEATURES, SEQ_LEN))
 print("BERT cls weights:")
-with open("saved_models_BERT_sigmoid/BERT_last_weights{}layers_{}features_{}len.txt".format(N_LAYERS, N_FEATURES,
-                                                                                            SEQ_LEN), "r") as s:
+with open("saved_models_BERT_sigmoid/BERT_last_weights{}layers_{}features_{}len.txt".format(N_LAYERS, N_FEATURES, SEQ_LEN), "r") as s:
     print(s.read())
+
+# Inverse-Standardizing here because R/JAGS is stupid
+# JAGS will do x - mu / std, so here we do x * std + mu
+features_bert_train_mu = np.mean(features_bert_train, axis=0)
+features_bert_train_std = np.std(features_bert_train, axis=0)
+features_bert_train = features_bert_train * features_bert_train_std + features_bert_train_mu
+features_bert_test = features_bert_test * features_bert_train_std + features_bert_train_mu
+
 
 # This is a check to make sure the split made here for the Behaviour features matches the one made for BERT on BERT_features.py
 # import torch
