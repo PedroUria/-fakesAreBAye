@@ -7,17 +7,18 @@ source("DBDA2E-utilities.R")
 SEED1 = 12
 SEED2 = 3
 SEED3 = 7
-xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT0')
+xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT0','fBERT1','fBERT2')
 # The first of these modes and stds is for the intercept
 PRIORS_MODES = c(0, 1, 1, -1, 1, -0.5025951, -0.37428102, 0.35757005)
 PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
 DO_ROBUST = FALSE  # If true, change the beta distrib for the guess below
 GUESS_BETA_A = 1  # Guess is a beta
 GUESS_BETA_B = 9
+GUESS_MULTIPL = 0.2  # Importance of random guess part
 DO_VARIABLE_SELECTION = TRUE
 # There is no theta for the intercept
-DELTAS_THETAS = c(0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5)
-BETA_DIR_NAME = "bdata"
+DELTAS_THETAS = c(0.9, 0.9, 0.9, 0.9, 0.8, 0.1, 0.1)
+BETA_DIR_NAME = "bdata_Pedro_01"
 
 #===============================================================================
 
@@ -47,6 +48,7 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
     priors_stds = PRIORS_STDS,
     guess_beta_a = GUESS_BETA_A,
     guess_beta_b = GUESS_BETA_B,
+    guess_multipl = GUESS_MULTIPL,
     deltas_thetas = DELTAS_THETAS
   )
   #-----------------------------------------------------------------------------
@@ -71,7 +73,7 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
     model {
     for ( i in 1:Ntotal ) {
     # In JAGS, ilogit is logistic:
-    y[i] ~ dbern( guess*(1/2) + (1-guess)*ilogit( zbeta0 + sum( zbeta[1:Nx] * zx[i,1:Nx] ) ) )
+    y[i] ~ dbern( guess*guess_multipl + (1-guess)*ilogit( zbeta0 + sum( zbeta[1:Nx] * zx[i,1:Nx] ) ) )
     }
     # Priors:
     zbeta0 ~ dnorm( priors_modes[1] , priors_stds[1] )  # TODO: Change to some kind of beta
@@ -203,7 +205,7 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
     model {
     for ( i in 1:Ntotal ) {
     # In JAGS, ilogit is logistic:
-    y[i] ~ dbern(  guess*(1/2) + (1-guess)*ilogit( zbeta0 + sum( delta[1:Nx] * zbeta[1:Nx] * zx[i,1:Nx] ) ) )
+    y[i] ~ dbern(  guess*guess_multipl + (1-guess)*ilogit( zbeta0 + sum( delta[1:Nx] * zbeta[1:Nx] * zx[i,1:Nx] ) ) )
     }
     # Priors
     zbeta0 ~ dnorm( priors_modes[1] , priors_stds[1] )  # TODO: Change to some kind of beta
@@ -429,7 +431,7 @@ plotMCMC = function( codaSamples , data , xName="x" , yName="y" ,
 
 
 
-myData = read.csv('prep_data/data_train.csv')[1:200,]
+myData = read.csv('prep_data/data_train.csv')  # [1:200,]
 yName = "Fake"
 fileNameRoot = "twest_stuff" 
 numSavedSteps=15000 ; thinSteps=2
@@ -457,20 +459,21 @@ if ( dir.exists(file.path(".", BETA_DIR_NAME)) ) {
 mcmcCoda = genMCMC( data=myData , xName=xName , yName=yName , 
                     numSavedSteps=numSavedSteps , thinSteps=thinSteps , 
                     saveName=fileNameRoot, nChains=3)
-plotMCMC(mcmcCoda, myData, xName=xName, yName=yName, saveName="mcmc_plots", saveType="jpg")
+plotMCMC(mcmcCoda, myData, xName=xName, yName=yName, saveName=paste0(BETA_DIR_NAME, "/mcmc_plots"), saveType="jpg")
 
-summaryInfo = smryMCMC(mcmcCoda, saveName = "mcmc_out")
+summaryInfo = smryMCMC(mcmcCoda, saveName = paste0(BETA_DIR_NAME, "/mcmc_out"))
 
 mc = as.matrix(mcmcCoda, chains = TRUE)
 unlink(BETA_DIR_NAME, recursive=TRUE)
 dir.create(BETA_DIR_NAME)
-for (i in 1:length(xName)+1) {
+for (i in 0:length(xName)+1) {
   if (i == 1) {
     beta_id = paste0("beta", toString(i-1))
   }
   else {
     beta_id = paste0("beta[", toString(i-1), "]")
   }
+  diagMCMC(codaObject=mcmcCoda, parName=beta_id, saveName=paste0(BETA_DIR_NAME, "/"))
   write.csv(mc[, beta_id], paste0(BETA_DIR_NAME, "/" , paste0("beta", toString(i - 1)), ".csv"))
 }
 
