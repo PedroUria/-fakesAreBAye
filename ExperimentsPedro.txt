@@ -40,6 +40,23 @@ Prediction     0     1
 
 Using ...  TODO
 
+------------------------------------------------------
+
+Experiment Number 2 (in progress):
+
+xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT0','fBERT1','fBERT2')
+# The first of these modes and stds is for the intercept
+PRIORS_MODES = c(0, 1, 1, -1, 1, -0.5025951, -0.37428102, 0.35757005)
+PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
+GUESS_BETA_A = 1  # Guess is a beta
+GUESS_BETA_B = 9
+GUESS_MULTIPL = 0.2  # Importance of random guess part
+DO_VARIABLE_SELECTION = TRUE
+# There is no theta for the intercept
+DELTAS_THETAS = c(0.9, 0.9, 0.9, 0.9, 0.8, 0.1, 0.1)
+BETA_DIR_NAME = "bdata_Pedro_02"
+
 
 
 

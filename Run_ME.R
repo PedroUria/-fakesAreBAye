@@ -11,14 +11,14 @@ xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT0','fBERT1','fB
 # The first of these modes and stds is for the intercept
 PRIORS_MODES = c(0, 1, 1, -1, 1, -0.5025951, -0.37428102, 0.35757005)
 PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
-DO_ROBUST = FALSE  # If true, change the beta distrib for the guess below
+DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
 GUESS_BETA_A = 1  # Guess is a beta
 GUESS_BETA_B = 9
 GUESS_MULTIPL = 0.2  # Importance of random guess part
 DO_VARIABLE_SELECTION = TRUE
 # There is no theta for the intercept
 DELTAS_THETAS = c(0.9, 0.9, 0.9, 0.9, 0.8, 0.1, 0.1)
-BETA_DIR_NAME = "bdata_Pedro_01"
+BETA_DIR_NAME = "bdata_Pedro_02"
 
 #===============================================================================
 
@@ -226,6 +226,7 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
     delta[5] ~ dbern ( deltas_thetas[5] )
     delta[6] ~ dbern ( deltas_thetas[6] )
     delta[7] ~ dbern ( deltas_thetas[7] )
+    guess ~ dbeta(guess_beta_a, guess_beta_b)
     # Transform to original scale:
     beta[1:Nx] <- zbeta[1:Nx] / xsd[1:Nx] 
     beta0 <- zbeta0 - sum( zbeta[1:Nx] * xm[1:Nx] / xsd[1:Nx] )
