@@ -42,7 +42,7 @@ Using ...  TODO
 
 ------------------------------------------------------
 
-Experiment Number 2 (in progress):
+Experiment Number 2:
 
 xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT0','fBERT1','fBERT2')
 # The first of these modes and stds is for the intercept
@@ -56,6 +56,104 @@ DO_VARIABLE_SELECTION = TRUE
 # There is no theta for the intercept
 DELTAS_THETAS = c(0.9, 0.9, 0.9, 0.9, 0.8, 0.1, 0.1)
 BETA_DIR_NAME = "bdata_Pedro_02"
+
+Using mode:
+
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 11489  1014
+         1  4532  1428
+                                          
+               Accuracy : 0.6996          
+                 95% CI : (0.6929, 0.7062)
+    No Information Rate : 0.8677          
+    P-Value [Acc > NIR] : 1               
+                                          
+                  Kappa : 0.1874          
+                                          
+ Mcnemar's Test P-Value : <2e-16          
+                                          
+              Precision : 0.23960         
+                 Recall : 0.58477         
+                     F1 : 0.33992         
+             Prevalence : 0.13226         
+         Detection Rate : 0.07734         
+   Detection Prevalence : 0.32281         
+      Balanced Accuracy : 0.65094 
+
+Using ... TODO
+
+------------------------------------------------------
+
+Experiment Number 3:
+
+SEED1 = 12
+SEED2 = 3
+SEED3 = 7
+xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT0')
+# The first of these modes and stds is for the intercept
+PRIORS_MODES = c(0, 2, 1, 1, 2, -0.5025951, -0.37428102, 0.35757005)
+PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
+GUESS_BETA_A = 1  # Guess is a beta
+GUESS_BETA_B = 9
+GUESS_MULTIPL = 0.1  # Importance of random guess part
+DO_VARIABLE_SELECTION = TRUE
+# There is no theta for the intercept
+DELTAS_THETAS = c(0.8, 0.6, 0.6, 0.8, 0.5, 0.1, 0.1)
+BETA_DIR_NAME = "bdata_Pedro_03"
+
+Using... TODo
+
+Confusion Matrix and Statistics
+
+          Reference
+Prediction     0     1
+         0 14314  1856
+         1  1707   586
+                                          
+               Accuracy : 0.807           
+                 95% CI : (0.8013, 0.8127)
+    No Information Rate : 0.8677          
+    P-Value [Acc > NIR] : 1.00000         
+                                          
+                  Kappa : 0.137           
+                                          
+ Mcnemar's Test P-Value : 0.01316         
+                                          
+              Precision : 0.25556         
+                 Recall : 0.23997         
+                     F1 : 0.24752         
+             Prevalence : 0.13226         
+         Detection Rate : 0.03174         
+   Detection Prevalence : 0.12419         
+      Balanced Accuracy : 0.56671         
+                                          
+       'Positive' Class : 1     
+
+
+------------------------------------------------------
+
+Experiment Number 4 (running):
+
+SEED1 = 12
+SEED2 = 3
+SEED3 = 7
+xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR')
+# The first of these modes and stds is for the intercept
+PRIORS_MODES = c(0, 0, 0, 0, 0, -0.5025951, -0.37428102, 0.35757005)
+PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+DO_ROBUST = FALSE  # If true, change the beta distrib for the guess below
+GUESS_BETA_A = 1  # Guess is a beta
+GUESS_BETA_B = 9
+GUESS_MULTIPL = 0.1  # Importance of random guess part
+DO_VARIABLE_SELECTION = FALSE
+# There is no theta for the intercept
+DELTAS_THETAS = c(0.8, 0.6, 0.6, 0.8, 0.5, 0.1, 0.1)
+BETA_DIR_NAME = "bdata_Pedro_04"
+
 
 
 
