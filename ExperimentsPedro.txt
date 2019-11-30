@@ -105,7 +105,7 @@ DO_VARIABLE_SELECTION = TRUE
 DELTAS_THETAS = c(0.8, 0.6, 0.6, 0.8, 0.5, 0.1, 0.1)
 BETA_DIR_NAME = "bdata_Pedro_03"
 
-Using... TODo
+Using mode:
 
 Confusion Matrix and Statistics
 
@@ -133,10 +133,11 @@ Prediction     0     1
                                           
        'Positive' Class : 1     
 
+Using ... TODO:
 
 ------------------------------------------------------
 
-Experiment Number 4 (running):
+Experiment Number 4:
 
 SEED1 = 12
 SEED2 = 3
@@ -154,7 +155,51 @@ DO_VARIABLE_SELECTION = FALSE
 DELTAS_THETAS = c(0.8, 0.6, 0.6, 0.8, 0.5, 0.1, 0.1)
 BETA_DIR_NAME = "bdata_Pedro_04"
 
+Using mode:
 
+Confusion Matrix and Statistics
 
+          Reference
+Prediction     0     1
+         0 13988  1949
+         1  2033   493
+                                          
+               Accuracy : 0.7843          
+                 95% CI : (0.7783, 0.7902)
+    No Information Rate : 0.8677          
+    P-Value [Acc > NIR] : 1.0000          
+                                          
+                  Kappa : 0.0739          
+                                          
+ Mcnemar's Test P-Value : 0.1884          
+                                          
+              Precision : 0.1952          
+                 Recall : 0.2019          
+                     F1 : 0.1985          
+             Prevalence : 0.1323          
+         Detection Rate : 0.0267          
+   Detection Prevalence : 0.1368          
+      Balanced Accuracy : 0.5375          
+                                          
+       'Positive' Class : 1     
+
+Using... TODO
+
+------------------------------------------------------
+
+Experiment Number 5:
+
+xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT0','fBERT1','fBERT2')
+# The first of these modes and stds is for the intercept
+PRIORS_MODES = c(0, 1, 1, -1, 1, -0.5025951, -0.37428102, 0.35757005)
+PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
+GUESS_BETA_A = 1  # Guess is a beta
+GUESS_BETA_B = 9
+GUESS_MULTIPL = 0.1  # Importance of random guess part
+DO_VARIABLE_SELECTION = TRUE
+# There is no theta for the intercept
+DELTAS_THETAS = c(0.7, 0.8, 0.5, 0.6, 0.9, 0.1, 0.1)
+BETA_DIR_NAME = "bdata_Pedro_05"
 
 
