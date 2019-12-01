@@ -12,7 +12,6 @@ APPLY_MODE, APPLY_MEAN, APPLY_MAX, USE_SAMPLES_THRESHOLD = False, False, True, 0
 # Another option is getting one prediction for each sample and then using the mode (APPLY_MAX)
 
 # TODO: Use logits from USE_SAMPLES APPLY_MEAN before taking the mean, and train a logistic regression with that (crazy I know)
-# TODO: For JAGS, switch bernouilli with binomial with a lower threshold
 
 BETA_DIR_NAME = "bdata_Pedro_05"
 # This FEATURES needs to correspond with the betas (first element is beta1, second is beta2, etc...)
