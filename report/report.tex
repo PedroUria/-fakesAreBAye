@@ -1,0 +1,69 @@
+\documentclass[man, floatsintext, 10pt]{apa6}
+% floatsintext so that figures show up where we want them to (https://www.tug.org/pracjourn/2012-1/beitzel/beitzel.pdf)
+\usepackage{lipsum}
+\usepackage{amsmath}
+\usepackage{harmony}  % Music stuff % https://martin-thoma.com/how-to-write-music-with-latex/
+\usepackage{dirtytalk} % Quote
+
+
+\PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
+\usepackage[american]{babel}
+\usepackage{ulem}
+\usepackage{graphicx}
+\usepackage{csquotes}
+\usepackage[style=apa,sortcites=true,sorting=nyt,backend=biber]{biblatex}
+\DeclareLanguageMapping{american}{american-apa}
+
+\title{fakesAreBAye}
+
+\shorttitle{fakesAreBAye}
+
+\author{Sean Pili and Pedro Uria \\ Bayesian Methods for Data Science}
+
+\affiliation{GWU}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+
+TODO
+
+\section{Data}
+
+TODO
+
+\section{Modeling}
+
+In this section we discuss the models used to tackle this problem. As mentioned (TODO), this is a binary classification task, in which we want to be able to correctly label a restaurant online review as either real or fake. We have discussed previous work on the matter, and incorporated some of the behavioral features used into our own models. However, we have taken a different approach for the NLP features. 
+
+\vspace{2mm}
+
+\paragraph{BERT} In our case, we used BERT as a language feature extractor. BERT is a Neural Network that has achieved state-of-the-art results in many NLP tasks, including classification. Although describing this language model is not of interest here, and thus will be treated as a black box, it is noteworthy that the authors have a lot of experience using BERT-like models. In order to extract the features, we add a linear layer on top of BERT, that maps its 768 dimensional output to a 3-dimensional dense vector, and another linear layer with a sigmoid output function that maps this vector to the probability of a review being real or fake. Therefore, once BERT is trained by minimizing a Binary Cross-Entropy performance index on our training data to classify the reviews, we go forward on our test data and use the intermediate 3-dimensional vector output as our NLP features. 
+
+Regarding the specifics of training BERT, we decided to cut the reviews at 100 tokens long, as BERT's time complexity is quadratic to the number of tokens in our reviews. We only used the first 4 layers of this model, a batch size of 32 reviews, and the Adam weight-decay optimizer with a learning rate of $e^{-5}$ and an epsilon of $e^{-8}$. In order to force the features to be more meaningful towards fake reviews, we weighted our loss during training using the proportion of real vs fake reviews. All the training was done in PyTorch via the huggingface transformers library.
+
+\vspace{2mm}
+
+\paragraph{Bayesian Logistic Regression} Once all the features were ready, we proceeded to train logistic regression models under the Bayesian probabilistic approach. In order to do so, we need to set some prior distributions to each of the model's parameters before we run the MCMC sampling process that allows us to infer their posteriors. TODO... Regarding the BERT features, we decided to go with normal distributions, using the BERT weights as the mean. That is, on our final classification layer, we basically have the following equation: $\text{prob}_{\text{fake}} = \text{sigmoid} (w_0 p_0 + w_1 p_1 + w_2 p_2 + b)$, where $p_i$ is our feature $i$ and $w_i$ is the weight. Given the fact that the sum inside the sigmoid is exactly a part of the sum instead our bayesian model, using the $w_i$ as the mode for the $p_i$ priors seemed more than reasonable, even more so when realizing that we do not know what the BERT features really mean.
+
+In regards to the specific model, we use a hierarchical approach 
+\begin{equation}
+\begin{split}
+\beta_i & \sim \text{ prior distribution} \\
+& \uparrow \\
+\mu & = \text{sigmoid}\Bigg(\beta_0 + \sum_i \beta_i x_i \Bigg) \\
+& \uparrow \\
+y & \sim\ \text{bernoulli} (\mu)
+\end{split}
+\end{equation}
+
+and also experiment with more advanced methods such as Robust Logistic Regression and variable selection. TODO.
+
+\section{Experiments and Results}
+
+\section{Conclusions}
+
+\end{document}
+
+
