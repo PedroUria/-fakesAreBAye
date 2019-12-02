@@ -27,42 +27,59 @@
 
 \section{Introduction}
 
-TODO
+In this project we develop models via Bayesian and Machine Learning methods in order to tell whether a restaurant review is real or fake, as well as to analyze various predictors that play or do not play a role in the matter TODO: Change once our results are clear. This problem is of great interest to the consumer and TODO: name of restaurant business space? community because a great majority of people read restaurant reviews online in order to make a well-informed decision on their meal destination. These reviews greatly affect consumers' prior beliefs about a particular business, and, unfortunately, it has been known for a while that some of these businesses pay individuals to write fake reviews, either positive towards their own products and services, or negatives towards their competitors. This immoral activity hurts consumers who may trust these fake reviews, even when they may be wary of them, because at first glance and even under careful inspection, fake reviews can very well look like real reviews. In order to take this into account, we use a combination of text but also behavioral features based on the reviewers previous activities.  While we focus on restaurants, this work could very well be extended to other kinds of reviews, such as hotels, services, and products in general.
+
+A good amount of work has previously been done in this matter... TODO
+
 
 \section{Data}
 
-TODO
+\paragraph{Raw data} The dataset we used was collected by Mukherjee et. al in order to analyze Yelp's review filter TODO: Note. It consists of  $61,541$ reviews of restaurants located in Chicago that were scraped from Yelp's website, and includes the review itself, together with the date, a unique review id, reviewer id, product id, star rating and label. Each review was automatically labeled as either real or fake by Yelp's filter algorithm. While this ground truth may not be completely accurate, Yelp is bold enough to make the fake reviews public, meaning that they have a great amount of trust on their model, which has also been under study and deemed to be fairly precise TODO: note. It is worth noting that Yelp has access to additional private user data, which is most likely being used to improve their system. The goal of this project is thus to provide other companies with a baseline of how to implement a fake review filter algorithm, as well as analyze the public features that are most relevant to this problem.
+
+\vspace{2mm}
+
+\paragraph{Behavioral Features} TODO
+
+ \vspace{2mm}
+ 
+\paragraph{Text Features} For computing the text features, we decided to use a state-of-the-art Neural Network called BERT, which will be briefly explained in the next section. We do not delve into this part very deeply, as we are aware that not even a human can distinguish well-crafted fake reviews from genuine reviews based on the text alone.
+
 
 \section{Modeling}
 
-In this section we discuss the models used to tackle this problem. As mentioned (TODO), this is a binary classification task, in which we want to be able to correctly label a restaurant online review as either real or fake. We have discussed previous work on the matter, and incorporated some of the behavioral features used into our own models. However, we have taken a different approach for the NLP features. 
+In this section we discuss the models used to tackle this problem. This is a binary classification task, in which we want to be able to correctly label a restaurant online review as either real or fake. We have discussed previous work on the matter, and incorporated some of the behavioral features used into our own models. However, we have taken a new approach for the text features.
 
 \vspace{2mm}
 
-\paragraph{BERT} In our case, we used BERT as a language feature extractor. BERT is a Neural Network that has achieved state-of-the-art results in many NLP tasks, including classification. Although describing this language model is not of interest here, and thus will be treated as a black box, it is noteworthy that the authors have a lot of experience using BERT-like models. In order to extract the features, we add a linear layer on top of BERT, that maps its 768 dimensional output to a 3-dimensional dense vector, and another linear layer with a sigmoid output function that maps this vector to the probability of a review being real or fake. Therefore, once BERT is trained by minimizing a Binary Cross-Entropy performance index on our training data to classify the reviews, we go forward on our test data and use the intermediate 3-dimensional vector output as our NLP features. 
+\paragraph{BERT} In our case, we used BERT as a language feature extractor. BERT is a Neural Network that has achieved state-of-the-art results in many NLP tasks, including classification. Although describing this language model is not of interest here, and thus will be treated as a black box, it is noteworthy that the authors have a lot of experience using BERT-like models. The input to these models can be thought of as the raw text for the purpose of this work, and in order to extract the features for each review, we add a linear layer on top of BERT, that maps its 768 dimensional output to a 3-dimensional dense vector, and another linear layer with a sigmoid output function that maps this vector to the probability of a review being real or fake. Therefore, once BERT is trained by minimizing a Binary Cross-Entropy performance index on our training data to classify the reviews, we go forward on our test data and use the intermediate 3-dimensional vector output as our text features. 
 
-Regarding the specifics of training BERT, we decided to cut the reviews at 100 tokens long, as BERT's time complexity is quadratic to the number of tokens in our reviews. We only used the first 4 layers of this model, a batch size of 32 reviews, and the Adam weight-decay optimizer with a learning rate of $e^{-5}$ and an epsilon of $e^{-8}$. In order to force the features to be more meaningful towards fake reviews, we weighted our loss during training using the proportion of real vs fake reviews. All the training was done in PyTorch via the huggingface transformers library.
+Regarding the specifics of training BERT, we decided to cut the reviews at 100 tokens long, as BERT's time complexity is quadratic to the number of tokens in our reviews, and if the text actually reveals whether a review is real or fake, we speculated such pattern would also be present in the first one hundred words. We only used the first 4 layers of this model, a batch size of 32 reviews, and the Adam weight-decay optimizer with a learning rate of $e^{-5}$ and an epsilon of $e^{-8}$. In order to force the features to be more meaningful towards fake reviews, we weighted our loss during training using the proportion of real vs fake reviews. All the training was done in PyTorch and we used the huggingface transformers implementation of BERT, starting from its base uncased pre-trained version.
 
 \vspace{2mm}
 
-\paragraph{Bayesian Logistic Regression} Once all the features were ready, we proceeded to train logistic regression models under the Bayesian probabilistic approach. In order to do so, we need to set some prior distributions to each of the model's parameters before we run the MCMC sampling process that allows us to infer their posteriors. TODO... Regarding the BERT features, we decided to go with normal distributions, using the BERT weights as the mean. That is, on our final classification layer, we basically have the following equation: $\text{prob}_{\text{fake}} = \text{sigmoid} (w_0 p_0 + w_1 p_1 + w_2 p_2 + b)$, where $p_i$ is our feature $i$ and $w_i$ is the weight. Given the fact that the sum inside the sigmoid is exactly a part of the sum instead our bayesian model, using the $w_i$ as the mode for the $p_i$ priors seemed more than reasonable, even more so when realizing that we do not know what the BERT features really mean.
+\paragraph{Bayesian Logistic Regression} Once all the features were ready, we proceeded to train logistic regression models under the Bayesian probabilistic approach using R and JAGS. In order to do so, we need to set some prior distributions to each of the model's parameters before we run the MCMC sampling process that allows us to infer their posteriors. TODO... Regarding the BERT features, we decided to go with normal distributions, using the BERT weights as their mean. That is, on our final classification layer, we basically have the following equation: $\text{prob}_{\text{fake}} = \text{sigmoid} (w_0 p_0 + w_1 p_1 + w_2 p_2 + b)$, where $p_i$ is our feature $i$ and $w_i$ is its weight. Given the fact that the sum inside the sigmoid is exactly a part of the sum instead our bayesian model, using the $w_i$ as the mean for the $p_i$ priors is likely the best we can do, even more so when realizing that we do not know what the BERT features really mean. TODO: bias --> Intercept....!!!!
 
-In regards to the specific model, we use a hierarchical approach 
-\begin{equation}
-\begin{split}
-\beta_i & \sim \text{ prior distribution} \\
-& \uparrow \\
-\mu & = \text{sigmoid}\Bigg(\beta_0 + \sum_i \beta_i x_i \Bigg) \\
-& \uparrow \\
-y & \sim\ \text{bernoulli} (\mu)
-\end{split}
-\end{equation}
+In regards to the specific bayesian model, we use a hierarchical approach 
 
-and also experiment with more advanced methods such as Robust Logistic Regression and variable selection. TODO.
+\[\beta_i \sim \text{ prior distribution} \] \[ \uparrow \] \[ \mu = \frac{1}{1 + e^{-\big(\beta_0 + \sum_i \beta_i x_i \big)}} \] \vspace{0.01mm}  \[ \uparrow \] \[ y \sim\ \text{bernoulli} (\mu) \]
+
+in which the target variable follows a Bernoulli distribution, with its probability following the logistic equation. Each of the logistic coefficients also follow the prior distributions mentioned above. By the iterative Markov-Chain Monte-Carlo algorithm, we sample from the posterior distributions of each of our coefficients until the chains converge. For a more detailed explanation of the theory behind this learning process, you can read ... TODO.  We also experiment with more advanced methods such as Robust Logistic Regression, which helps to deal with outliers by incorporating into the model a small chance ($\alpha/2$) of a data point being randomly generated, and variable selection, in order to deal, for the most part, with the BERT features. Variable selection is achieved by incorporating a multiplier to each logistic coefficient that can only be 0 or 1. Thus, if this multiplier ($\delta_i$) is 0, the feature $i$ will not be used in the model. Of course, these new parameters also need priors, which come from Bernoulli distributions with different probabilities. The most general model we used is therefore described as follows:
+
+ \[\beta_i \sim \text{ prior distribution}, \hspace{2mm} \delta_i \sim \text{ Bernoulli prior distribution}, \hspace{2mm}\  \alpha \sim \text{ beta prior distribution (1, 9)} \] \[ \uparrow \] \[ \mu = \frac{1}{2} \alpha + (1 - \alpha) \frac{1}{1 + e^{-\big(\beta_0 + \sum_i \delta_i \beta_i x_i \big)}} \] \vspace{0.01mm}  \[ \uparrow \] \[ y \sim\ \text{bernoulli} (\mu) \]
+ 
+In the next section we elaborate on different priors and their posteriors, the use of the advanced approaches, and our inference results.
 
 \section{Experiments and Results}
 
-\section{Conclusions}
+\paragraph{Overview} Although most of the experimental work focused on MCMC, we also experimented when training BERT, until we got a decent model by using the approach mentioned at the beginning of the previous section. Such model ..... TODO: results. The experiments will not be discussed as they are not relevant for this work. We decided to keep the number of BERT features very small compared to the original size (3 vs 768), in order to avoid overwhelming the likely more important behavioral features. The weights for these features ($-0.5025951$, $-0.37428102$ and $0.35757005$) were used as means of their prior normal distributions, with a standard deviation of TODO . While we standardized the rest of the features, we did not do so for BERT's, because they were already within a [-3, 3] range, and doing so would mess with the our approach for choosing the priors. We conducted several experiments in order to arrive at chains with good convergence and the desired properties. In this section we explain the most relevant, as well as present and analyze our results. 
+
+\vspace{2mm}
+
+\paragraph{Mmm} TODO
+
+\section{Conclusions} 
+
+TODO
 
 \end{document}
 
