@@ -9,16 +9,16 @@ SEED2 = 3
 SEED3 = 7
 xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT0','fBERT1','fBERT2')
 # The first of these modes and stds is for the intercept
-PRIORS_MODES = c(0, 1, 1, -1, 1, -0.5025951, -0.37428102, 0.35757005)
-PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+PRIORS_MODES = c(0, 1, 1, 1, -1, -0.5025951, -0.37428102, 0.35757005)
+PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/4^2, 1/4^2, 1/4^2)
 DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
 GUESS_BETA_A = 1  # Guess is a beta
 GUESS_BETA_B = 9
-GUESS_MULTIPL = 0.2  # Importance of random guess part
+GUESS_MULTIPL = 0.1  # Importance of random guess part
 DO_VARIABLE_SELECTION = TRUE
-# There is no theta for the intercept
-DELTAS_THETAS = c(0.9, 0.9, 0.9, 0.9, 0.8, 0.1, 0.1)
-BETA_DIR_NAME = "bdata_Pedro_02"
+# There is a theta for the intercept
+DELTAS_THETAS = c(0.6, 0.7, 0.8, 0.5, 0.6, 0.9, 0.1, 0.1)
+BETA_DIR_NAME = "bdata_Pedro_07"
 
 #===============================================================================
 
@@ -157,7 +157,7 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
     model {
     for ( i in 1:Ntotal ) {
     # In JAGS, ilogit is logistic:
-    y[i] ~ dbern( ilogit( zbeta0 + sum( delta[1:Nx] * zbeta[1:Nx] * zx[i,1:Nx] ) ) )
+    y[i] ~ dbern( ilogit( delta0 * zbeta0 + sum( delta[1:Nx] * zbeta[1:Nx] * zx[i,1:Nx] ) ) )
     }
     # Priors
     zbeta0 ~ dnorm( priors_modes[1] , priors_stds[1] )  # TODO: Change to some kind of beta
@@ -171,13 +171,14 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
     zbeta[5] ~ dnorm( priors_modes[6] , priors_stds[6] )  # BERT features
     zbeta[6] ~ dnorm( priors_modes[7] , priors_stds[7] )  # using weights
     zbeta[7] ~ dnorm( priors_modes[8] , priors_stds[8] )  # as mode for priors
-    delta[1] ~ dbern ( deltas_thetas[1] )
-    delta[2] ~ dbern ( deltas_thetas[2] )
-    delta[3] ~ dbern ( deltas_thetas[3] )
-    delta[4] ~ dbern ( deltas_thetas[4] )
-    delta[5] ~ dbern ( deltas_thetas[5] )
-    delta[6] ~ dbern ( deltas_thetas[6] )
-    delta[7] ~ dbern ( deltas_thetas[7] )
+    delta0 ~ dbern ( deltas_thetas[1] )
+    delta[1] ~ dbern ( deltas_thetas[2] )
+    delta[2] ~ dbern ( deltas_thetas[3] )
+    delta[3] ~ dbern ( deltas_thetas[4] )
+    delta[4] ~ dbern ( deltas_thetas[5] )
+    delta[5] ~ dbern ( deltas_thetas[6] )
+    delta[6] ~ dbern ( deltas_thetas[7] )
+    delta[7] ~ dbern ( deltas_thetas[8] )
     guess ~ dbeta(guess_beta_a, guess_beta_b)
     # Transform to original scale:
     beta[1:Nx] <- zbeta[1:Nx] / xsd[1:Nx] 
@@ -205,7 +206,7 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
     model {
     for ( i in 1:Ntotal ) {
     # In JAGS, ilogit is logistic:
-    y[i] ~ dbern(  guess*guess_multipl + (1-guess)*ilogit( zbeta0 + sum( delta[1:Nx] * zbeta[1:Nx] * zx[i,1:Nx] ) ) )
+    y[i] ~ dbern(  guess*guess_multipl + (1-guess)*ilogit( delta0 * zbeta0 + sum( delta[1:Nx] * zbeta[1:Nx] * zx[i,1:Nx] ) ) )
     }
     # Priors
     zbeta0 ~ dnorm( priors_modes[1] , priors_stds[1] )  # TODO: Change to some kind of beta
@@ -219,13 +220,14 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
     zbeta[5] ~ dnorm( priors_modes[6] , priors_stds[6] )  # BERT features
     zbeta[6] ~ dnorm( priors_modes[7] , priors_stds[7] )  # using weights
     zbeta[7] ~ dnorm( priors_modes[8] , priors_stds[8] )  # as mode for priors
-    delta[1] ~ dbern ( deltas_thetas[1] )
-    delta[2] ~ dbern ( deltas_thetas[2] )
-    delta[3] ~ dbern ( deltas_thetas[3] )
-    delta[4] ~ dbern ( deltas_thetas[4] )
-    delta[5] ~ dbern ( deltas_thetas[5] )
-    delta[6] ~ dbern ( deltas_thetas[6] )
-    delta[7] ~ dbern ( deltas_thetas[7] )
+    delta0 ~ dbern ( deltas_thetas[1] )
+    delta[1] ~ dbern ( deltas_thetas[2] )
+    delta[2] ~ dbern ( deltas_thetas[3] )
+    delta[3] ~ dbern ( deltas_thetas[4] )
+    delta[4] ~ dbern ( deltas_thetas[5] )
+    delta[5] ~ dbern ( deltas_thetas[6] )
+    delta[6] ~ dbern ( deltas_thetas[7] )
+    delta[7] ~ dbern ( deltas_thetas[8] )
     guess ~ dbeta(guess_beta_a, guess_beta_b)
     # Transform to original scale:
     beta[1:Nx] <- zbeta[1:Nx] / xsd[1:Nx] 
@@ -250,7 +252,7 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
   #-----------------------------------------------------------------------------
   # RUN THE CHAINS
   parameters = c( "beta0" ,  "beta" ,  
-                  "zbeta0" , "zbeta" )
+                  "zbeta0" , "zbeta", "delta0", "delta", "guess" )
   adaptSteps = 500  # Number of steps to "tune" the samplers
   burnInSteps = 1000
   runJagsOut <- run.jags( method=runjagsMethod ,
@@ -307,10 +309,17 @@ plotMCMC = function( codaSamples , data , xName="x" , yName="y" ,
   chainLength = NROW( mcmcMat )
   zbeta0 = mcmcMat[,"zbeta0"]
   zbeta  = mcmcMat[,grep("^zbeta$|^zbeta\\[",colnames(mcmcMat))]
+  # if (DO_ROBUST) {
+  #   guess = mcmcMat[,"guess"]
+  # }
+  # if (DO_VARIABLE_SELECTION) {
+  #   delta = mcmcMat[,grep("^delta$|^delta\\[",colnames(mcmcMat))]
+  # }
   if ( ncol(x)==1 ) { zbeta = matrix( zbeta , ncol=1 ) }
   beta0 = mcmcMat[,"beta0"]
   beta  = mcmcMat[,grep("^beta$|^beta\\[",colnames(mcmcMat))]
   if ( ncol(x)==1 ) { beta = matrix( beta , ncol=1 ) }
+  # if ( ncol(x)==1 ) { delta = matrix( delta , ncol=1 ) }
   #-----------------------------------------------------------------------------
   if ( pairsPlot ) {
     # Plot the parameters pairwise, to see correlations:
@@ -412,6 +421,13 @@ plotMCMC = function( codaSamples , data , xName="x" , yName="y" ,
     histInfo = plotPost( beta[,bIdx] , cex.lab = 1.75 , showCurve=showCurve ,
                          xlab=bquote(beta[.(bIdx)]) , main=xName[bIdx] )
   }
+  # for ( bIdx in 1:ncol(delta) ) {
+    # panelCount = decideOpenGraph( panelCount , saveName=paste0(saveName,"PostMarg") )
+    # histInfo = plotPost( delta[,bIdx] , cex.lab = 1.75 , showCurve=showCurve ,
+    #                      xlab=bquote(delta[.(bIdx)]) , main=xName[bIdx+ncol(beta)+1], ylim="delta")
+  # }
+  # histInfo = plotPost( guess , cex.lab = 1.75 , showCurve=showCurve ,
+  #                      xlab=bquote("guess") , main="guess" )
   panelCount = decideOpenGraph( panelCount , finished=TRUE , saveName=paste0(saveName,"PostMarg") )
   
   # Standardized scale:
@@ -432,7 +448,7 @@ plotMCMC = function( codaSamples , data , xName="x" , yName="y" ,
 
 
 
-myData = read.csv('prep_data/data_train.csv')  # [1:200,]
+myData = read.csv('prep_data/data_train.csv')[1:3, ]  # [1:200,]
 yName = "Fake"
 fileNameRoot = "twest_stuff" 
 numSavedSteps=15000 ; thinSteps=2
@@ -456,6 +472,8 @@ graphFileType = "eps"
 if ( dir.exists(file.path(".", BETA_DIR_NAME)) ) {
   print("Directory already exists!")
 }
+unlink(BETA_DIR_NAME, recursive=TRUE)
+dir.create(BETA_DIR_NAME)
     
 mcmcCoda = genMCMC( data=myData , xName=xName , yName=yName , 
                     numSavedSteps=numSavedSteps , thinSteps=thinSteps , 
@@ -465,8 +483,10 @@ plotMCMC(mcmcCoda, myData, xName=xName, yName=yName, saveName=paste0(BETA_DIR_NA
 summaryInfo = smryMCMC(mcmcCoda, saveName = paste0(BETA_DIR_NAME, "/mcmc_out"))
 
 mc = as.matrix(mcmcCoda, chains = TRUE)
-unlink(BETA_DIR_NAME, recursive=TRUE)
-dir.create(BETA_DIR_NAME)
+if (DO_ROBUST) {
+  diagMCMC(codaObject=mcmcCoda, parName="guess", saveName=paste0(BETA_DIR_NAME, "/"))
+  write.csv(mc[, "guess"], paste0(BETA_DIR_NAME, "/" , paste0("guess"), ".csv"))
+}
 for (i in 0:length(xName)+1) {
   if (i == 1) {
     beta_id = paste0("beta", toString(i-1))
@@ -476,5 +496,16 @@ for (i in 0:length(xName)+1) {
   }
   diagMCMC(codaObject=mcmcCoda, parName=beta_id, saveName=paste0(BETA_DIR_NAME, "/"))
   write.csv(mc[, beta_id], paste0(BETA_DIR_NAME, "/" , paste0("beta", toString(i - 1)), ".csv"))
+  if (DO_VARIABLE_SELECTION) {
+    if (i == 1) {
+      delta_id = paste0("delta", toString(i-1))
+    }
+    else {
+      delta_id = paste0("delta[", toString(i-1), "]")
+    }
+    diagMCMC(codaObject=mcmcCoda, parName=delta_id, saveName=paste0(BETA_DIR_NAME, "/"))
+    write.csv(mc[, delta_id], paste0(BETA_DIR_NAME, "/" , paste0("delta", toString(i - 1)), ".csv"))
+  }
+  
 }
 
