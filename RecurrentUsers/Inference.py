@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, recall_score
 USE_MODE, USE_MODE_THRESHOLD = False, 0.5  # This means use mode as coefficient and do regular logistic regression.
 # logits greater or equal than THRESHOLD are considered to be fake reviews
 USE_SAMPLES = True  # This means getting one z for each sampled betas, then use the mode of distribution and apply
-APPLY_MODE, APPLY_MEAN, APPLY_MAX, USE_SAMPLES_THRESHOLD = False, False, True, 0.5  # sigmoid on this (APPLY_MODE)
+APPLY_MODE, APPLY_MEAN, APPLY_MAX, USE_SAMPLES_THRESHOLD = True, False, False, 0.5  # sigmoid on this (APPLY_MODE)
 # Another option is getting one logit for each sample and using the mean (APPLY_MEAN)
 # Another option is getting one prediction for each sample and then using the mode (APPLY_MAX)
 
@@ -16,23 +16,38 @@ APPLY_MODE, APPLY_MEAN, APPLY_MAX, USE_SAMPLES_THRESHOLD = False, False, True, 0
 BETA_DIR_NAME = "bdata_Pedro_02"
 # This FEATURES needs to correspond with the betas (first element is beta1, second is beta2, etc...)
 FEATURES = ["Reviewer_deviation", 'avg_posR', 'avg_revL', 'MNR', 'fBERT0', 'fBERT1', 'fBERT2']
+DO_ROBUST, GUESS_MULTIPL = False, 0.2
+DO_VARIABLE_SELECTION = False
 
 data_test = pd.read_csv('prep_data/data_test.csv')
 y = data_test["Fake"].values
 betas_samples = {"Intercept": pd.read_csv(BETA_DIR_NAME + "/" + "beta0.csv")["x"].values}
 for i in range(len(FEATURES)):
     betas_samples[FEATURES[i]] = pd.read_csv(BETA_DIR_NAME + "/" + "beta{}.csv".format(i + 1))["x"].values
+deltas_samples = {"Intercept": pd.read_csv(BETA_DIR_NAME + "/" + "delta0.csv")["x"].values}
+for i in range(len(FEATURES)):
+    deltas_samples[FEATURES[i]] = pd.read_csv(BETA_DIR_NAME + "/" + "delta{}.csv".format(i + 1))["x"].values
+guess_samples = pd.read_csv(BETA_DIR_NAME + "/" + "guess.csv")["x"].values
 
 if USE_MODE:
 
     betas_modes = {}
     for key in betas_samples.keys():
         betas_modes[key] = stats.mode(betas_samples[key])[0][0]
+    deltas_modes = {}
+    for key in deltas_samples.keys():
+        if DO_VARIABLE_SELECTION:
+            deltas_modes[key] = stats.mode(deltas_samples[key])[0][0]
+        else:
+            deltas_modes[key] = 1
 
-    z = betas_modes["Intercept"]
+    z = deltas_modes["Intercept"] * betas_modes["Intercept"]
     for key in FEATURES:
-        z += betas_modes[key] * data_test[key].values
+        z += deltas_modes[key] * betas_modes[key] * data_test[key].values
     logits = 1 / (1 + np.exp(-z))
+    if DO_ROBUST:
+        guess_mode = stats.mode(guess_samples)[0][0]
+        logits = guess_mode*GUESS_MULTIPL + (1-guess_mode)*logits
 
     logits_copy = np.copy(logits)
     logits_copy[logits_copy >= USE_MODE_THRESHOLD] = 1
@@ -59,7 +74,13 @@ if USE_SAMPLES:
     b_samples = np.empty((len(betas_samples[FEATURES[0]]), (1 + len(FEATURES))))
     for i, key in enumerate(betas_samples.keys()):
         b_samples[:, i] = betas_samples[key]
-    z_samples = b_samples[:, 0] + np.dot(data_test[FEATURES].values, b_samples[:, 1:].T)
+    d_samples = np.empty((len(deltas_samples[FEATURES[0]]), (1 + len(FEATURES))))
+    for i, key in enumerate(deltas_samples.keys()):
+        if DO_VARIABLE_SELECTION:
+            d_samples[:, i] = deltas_samples[key]
+        else:
+            d_samples[:, i] = 1
+    z_samples = d_samples[:, 0] * b_samples[:, 0] + np.dot(data_test[FEATURES].values, (d_samples[:, 1:] * b_samples[:, 1:]).T)
 
     if APPLY_MODE:
         # z_modes = stats.mode(z_samples.T)[0]
@@ -71,11 +92,16 @@ if USE_SAMPLES:
         logits = np.mean(logits_samples, axis=1)
     if APPLY_MAX:
         logits_samples = 1 / (1 + np.exp(-z_samples))
+        if DO_ROBUST:
+            logits = guess_samples * GUESS_MULTIPL + (1 - guess_samples) * logits_samples
         logits_samples_copy = np.copy(logits_samples)
         logits_samples_copy[logits_samples_copy >= USE_SAMPLES_THRESHOLD] = 1
         logits_samples_copy[logits_samples_copy < USE_SAMPLES_THRESHOLD] = 0
         y_pred = stats.mode(logits_samples_copy.T)[0].reshape(-1)
     else:
+        if DO_ROBUST:
+            guess_mode = stats.mode(guess_samples)[0][0]
+            logits = guess_mode * GUESS_MULTIPL + (1 - guess_mode) * logits
         logits_copy = np.copy(logits)
         logits_copy[logits_copy >= USE_SAMPLES_THRESHOLD] = 1
         logits_copy[logits_copy < USE_SAMPLES_THRESHOLD] = 0
