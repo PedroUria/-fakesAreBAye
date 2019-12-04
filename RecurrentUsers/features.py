@@ -4,7 +4,12 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from data_eda import data_restaurants
-
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.stem.porter import *
+porter_stemmer = PorterStemmer()
+sentence_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
+import itertools
 # %% --------------------------------------- Set-Up --------------------------------------------------------------------
 SEED = 42
 np.random.seed(SEED)
@@ -41,6 +46,65 @@ data_restaurants['abs_prod_rating_dev'] = np.abs(data_restaurants['Rating'] - da
 exp_rev_frame = data_restaurants.groupby('ReviewerID').mean()['abs_prod_rating_dev']
 data_restaurants['Reviewer_deviation'] = data_restaurants['ReviewerID'].apply(lambda x: exp_rev_frame[x])
 
+
+
+
+def cosine_similarity(document_1_data, document_2_data):
+    document_vector_word_index = [] # here fill this with an ordered list of all the unique words across both documents
+    d1_uniqs = []
+    d1_nun = []
+    dat = sentence_tokenizer.tokenize(document_1_data)
+    for sent in dat:
+        d1_uniqs.extend(word_tokenize(sent))
+        d1_nun.extend(word_tokenize(sent))
+        d1_uniqs = list(set(d1_uniqs))
+    d2_uniqs = []
+    d2_nun = []
+    dat2 = sentence_tokenizer.tokenize(document_2_data)
+    for sent in dat2:
+        d2_uniqs.extend(word_tokenize(sent))
+        d2_uniqs = list(set(d2_uniqs))
+        d2_nun.extend(word_tokenize(sent))
+
+    
+    all_words = d1_nun+d2_nun   
+
+    overlap = d1_uniqs + d2_uniqs 
+    # so this is all of the unique words across the two documents
+    document_vector_word_index += list(set(overlap))
+    
+
+    document_1_vector = list(np.zeros(len(document_vector_word_index)))  # fill in the array with the frequency of the words in the document
+    document_2_vector = list(np.zeros(len(document_vector_word_index))) # fill in the array with the frequency of the words in the document
+
+    for wOrd in d1_nun:
+        document_1_vector[document_vector_word_index.index(wOrd)] +=1
+    
+    for wOrd in d2_nun:
+        document_2_vector[document_vector_word_index.index(wOrd)] +=1
+    
+    d1_norm = (np.sum(np.array(document_1_vector)**2))**(1/2)
+    d2_norm = (np.sum(np.array(document_2_vector)**2))**(1/2)
+    
+    cosSim = np.dot(document_1_vector,document_2_vector)/(d1_norm*d2_norm)
+
+
+    
+    return (cosSim)
+countR2 = data_restaurants.groupby('ReviewerID').count().index
+data_restaurants['stem_rev'] = data_restaurants['Review'].apply(lambda x: porter_stemmer.stem(x)) 
+cos_dict = {}
+print('doin cosine')
+for x in countR2:
+    temp = data_restaurants[data_restaurants['ReviewerID'] == x]
+    cands = []
+    for i in itertools.combinations(temp.index,2):
+        cands.append(cosine_similarity(temp.loc[i[0]]['stem_rev'],temp.loc[i[1]]['stem_rev']))
+    cos_dict[x]=max(cands)
+print('done cosine')
+data_restaurants['max_cos'] = data_restaurants['ReviewerID'].apply(lambda x: cos_dict[x])
+
+
 x = data_restaurants.drop(["Fake"], axis=1)
 y = data_restaurants["Fake"].replace("N", 0).replace("Y", 1)
 x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=SEED, test_size=0.3, stratify=y)
@@ -48,8 +112,8 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, random_state=SEED, tes
 if TURN_BERT_INTO_SIMILARITY:
     features_behaviour_train, features_behaviour_test = x_train, x_test
 else:
-    features_behaviour_train = x_train[['Reviewer_deviation', 'avg_posR', 'avg_revL', 'MNR']]
-    features_behaviour_test = x_test[['Reviewer_deviation', 'avg_posR', 'avg_revL', 'MNR']]
+    features_behaviour_train = x_train[['Reviewer_deviation', 'avg_posR', 'avg_revL', 'MNR','max_cos']]
+    features_behaviour_test = x_test[['Reviewer_deviation', 'avg_posR', 'avg_revL', 'MNR','max_cos']]
 
 # %% ----------------------------------------- BERT Features -----------------------------------------------------------
 SEQ_LEN = 100
