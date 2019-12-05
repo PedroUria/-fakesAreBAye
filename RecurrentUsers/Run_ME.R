@@ -7,18 +7,18 @@ source("DBDA2E-utilities.R")
 SEED1 = 12
 SEED2 = 3
 SEED3 = 7
-xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT0' ,'fBERT1','fBERT2')
+xName = c("Reviewer_deviation", "avg_posR", "avg_revL", "MNR", "max_cos", "fBERT0", "fBERT1", "fBERT2")
 # The first of these modes and stds is for the intercept
-PRIORS_MODES = c(0, 1, 1, -1, 1, -0.5025951, -0.37428102, 0.35757005)
-PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+PRIORS_MODES = c(0.021997, 1, 1, -1, 1, 1, -0.5015929, -0.3729589, 0.3562961)
+PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
 DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
 GUESS_BETA_A = 1  # Guess is a beta
 GUESS_BETA_B = 9
 GUESS_MULTIPL = 0.2  # Importance of random guess part
 DO_VARIABLE_SELECTION = TRUE
-# There is a theta for the intercept
-DELTAS_THETAS = c(0.5, 0.9, 0.9, 0.9, 0.9, 0.8, 0.1, 0.1)
-BETA_DIR_NAME = "bdata_Pedro_02"
+# There is no theta for the intercept
+DELTAS_THETAS = c(0.5, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9)
+BETA_DIR_NAME = "bdata_P_01"
 
 #===============================================================================
 
@@ -220,6 +220,7 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
     zbeta[5] ~ dnorm( priors_modes[6] , priors_stds[6] )  # BERT features
     zbeta[6] ~ dnorm( priors_modes[7] , priors_stds[7] )  # using weights
     zbeta[7] ~ dnorm( priors_modes[8] , priors_stds[8] )  # as mode for priors
+    zbeta[8] ~ dnorm( priors_modes[9] , priors_stds[9] )
     delta0 ~ dbern ( deltas_thetas[1] )
     delta[1] ~ dbern ( deltas_thetas[2] )
     delta[2] ~ dbern ( deltas_thetas[3] )
@@ -228,6 +229,7 @@ genMCMC = function( data , xName="x" , yName="Fake" ,
     delta[5] ~ dbern ( deltas_thetas[6] )
     delta[6] ~ dbern ( deltas_thetas[7] )
     delta[7] ~ dbern ( deltas_thetas[8] )
+    delta[8] ~ dbern ( deltas_thetas[9] )
     guess ~ dbeta(guess_beta_a, guess_beta_b)
     # Transform to original scale:
     beta[1:Nx] <- zbeta[1:Nx] / xsd[1:Nx] 
