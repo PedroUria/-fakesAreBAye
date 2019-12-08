@@ -1,0 +1,49 @@
+------------------------------------------------------
+All the experiments are done with the following seeds:
+SEED1 = 12
+SEED2 = 3
+SEED3 = 7
+
+------------------------------------------------------
+
+Experiment Number 1:
+
+xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT0','fBERT1','fBERT2')
+# The first of these modes and stds is for the intercept
+PRIORS_MODES = c(0.021997, 1, 1, -1, 1, -0.5015929, -0.3729589, 0.3562961)
+PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
+GUESS_BETA_A = 1  # Guess is a beta
+GUESS_BETA_B = 9
+GUESS_MULTIPL = 0.2  # Importance of random guess part
+DO_VARIABLE_SELECTION = TRUE
+# There is no theta for the intercept
+DELTAS_THETAS = c(0.5, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.1, 0.1)
+BETA_DIR_NAME = "bdata_01"
+
+Results:
+
+Decent in terms of predictions but some chains didn't converge (BERT0 and BERT1, so removing from next experiment)
+
+------------------------------------------------------
+
+Experiment Number 2:
+
+xName = c("Reviewer_deviation",'avg_posR','avg_revL','MNR','fBERT2')
+# The first of these modes and stds is for the intercept
+PRIORS_MODES = c(0.021997, 1, 1, -1, 1, 0.3562961, -0.5015929, -0.3729589)
+PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
+GUESS_BETA_A = 1  # Guess is a beta
+GUESS_BETA_B = 9
+GUESS_MULTIPL = 0.2  # Importance of random guess part
+DO_VARIABLE_SELECTION = TRUE
+# There is no theta for the intercept
+DELTAS_THETAS = c(0.5, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.1, 0.1)
+BETA_DIR_NAME = "bdata_02"
+
+Good results in terms of predictions, chains converged and it seems that avg_posR and MNR are not relevant at all. Removing for next experiment.
+
+------------------------------------------------------
+
+TODO: Include hyperparameters for Experiments 3 and 4 ("bdata_03" and "bdata_04")
