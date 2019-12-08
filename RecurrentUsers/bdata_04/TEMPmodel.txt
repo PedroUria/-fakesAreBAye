@@ -1,0 +1,49 @@
+
+    # Standardize the data:
+    data {
+    for ( j in 1:Nx ) {
+    xm[j]  <- mean(x[,j])
+    xsd[j] <-   sd(x[,j])
+    # if ( j > 5 ) {  # For some reason this doesn't work so I just invers-standardized BERT's features on features.py
+    # xm[j]  <- mean(x[,j]) * 0
+    # xsd[j] <-   sd(x[,j]) / sd(x[,j])
+    # }
+    for ( i in 1:Ntotal ) {
+    zx[i,j] <- ( x[i,j] - xm[j] ) / xsd[j]
+    }
+    }
+    }
+    # Specify the model for standardized data:
+    model {
+    for ( i in 1:Ntotal ) {
+    # In JAGS, ilogit is logistic:
+    y[i] ~ dbern(  guess*guess_multipl + (1-guess)*ilogit( delta0 * zbeta0 + sum( delta[1:Nx] * zbeta[1:Nx] * zx[i,1:Nx] ) ) )
+    }
+    # Priors
+    zbeta0 ~ dnorm( priors_modes[1] , priors_stds[1] )  # TODO: Change to some kind of beta
+    # for (i in 1:Nx + 1) {
+    # zbeta[i] ~ dnorm( priors_modes[i] , 1/2^2 )
+    # }
+    zbeta[1] ~ dnorm( priors_modes[2] , priors_stds[2] )  # Reviwer deviation, greater means more likely to be fake
+    zbeta[2] ~ dnorm( priors_modes[3] , priors_stds[3])  # Percentage of 4-5 star reviews per user, greater means more likely to be fake
+    zbeta[3] ~ dnorm( priors_modes[4] , priors_stds[4] )  # For avg review length per user, longer reviews means more likely to be real
+    zbeta[4] ~ dnorm( priors_modes[5] , priors_stds[5] )  # Maximum number of reviews in a day per user, more reviews means more likely to be fake
+    zbeta[5] ~ dnorm( priors_modes[6] , priors_stds[6] )  # BERT features
+    zbeta[6] ~ dnorm( priors_modes[7] , priors_stds[7] )  # using weights
+    zbeta[7] ~ dnorm( priors_modes[8] , priors_stds[8] )  # as mode for priors
+    zbeta[8] ~ dnorm( priors_modes[9] , priors_stds[9] )
+    delta0 ~ dbern ( deltas_thetas[1] )
+    delta[1] ~ dbern ( deltas_thetas[2] )
+    delta[2] ~ dbern ( deltas_thetas[3] )
+    delta[3] ~ dbern ( deltas_thetas[4] )
+    delta[4] ~ dbern ( deltas_thetas[5] )
+    delta[5] ~ dbern ( deltas_thetas[6] )
+    delta[6] ~ dbern ( deltas_thetas[7] )
+    delta[7] ~ dbern ( deltas_thetas[8] )
+    delta[8] ~ dbern ( deltas_thetas[9] )
+    guess ~ dbeta(guess_beta_a, guess_beta_b)
+    # Transform to original scale:
+    beta[1:Nx] <- zbeta[1:Nx] / xsd[1:Nx] 
+    beta0 <- zbeta0 - sum( zbeta[1:Nx] * xm[1:Nx] / xsd[1:Nx] )
+    }
+    
