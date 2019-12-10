@@ -86,7 +86,16 @@ Regarding the BERT features, we decided to go with normal distributions, using t
 
 \vspace{2mm}
 
-\paragraph{Posteriors} For all the experiments, we run 3 MCMC chains with different but constant random seeds and initializations, using JAGS for 15,000 steps. The specifics hyper-parameters to reproduce our results can be found in our GitHub repository. TODO: Include this when we clean the repo and put a link. We started with the basic bayesian logistic regression approach but soon switched to the combination of the robust and variable selection improvements. All the experiments we will discuss are based on this advanced approach. TODO: Talk about the chosen guess and delta. Our first thought was to include all the features we had computed, which resulted in ... TODO ... but very bad convergence for two of the BERT features, as shown in figure TODO. This was actually to be expected given the huge correlation among these features, as evidenced by figure \ref{BERTf}.
+\paragraph{Posteriors} For all the experiments, we run 3 MCMC chains with different but constant random seeds and initializations, using JAGS for 15,000 steps. The specifics hyper-parameters to reproduce our results can be found in our GitHub \href{https://github.com/seanpili/-fakesAreBAye/blob/master/RecurrentUsers/experiments.txt}{repository}. We started with the basic bayesian logistic regression approach but soon switched to the combination of the robust and variable selection improvements. All the experiments we will discuss are based on this advanced approach. Unless explicitly mentioned, we used 0.5 delta for the intercept and 0.9 for the rest of the features, and a guess multiplier of 0.2. Our first thought was to include all the features we had computed, which resulted in very bad convergence for most of them. When we looked at the correlation, we realized the cosine similarity was very correlated with these features, so we decided to exclude it from our next experiments. Afterwards, we re-run MCMC and all the features had good convergence except for the first two BERT features, as shown in figure \ref{BERTfMCMC}. This was actually to be expected given the huge correlation among these features, as evidenced by figure \ref{BERTf}. Therefore, we decided to also drop the first two BERT features. In doing so, we also found that PR and MNR were not significant, as we can see in the posteriors shown in figure \ref{PR_MNR_Posteriors}. Figure \ref{PR_MNR_Deltas} shows the deltas for such features, which further confirms the little predictive power of PR and MNR. This agrees with our EDA.
+
+\begin{figure}
+\includegraphics[width=8cm]{Intercept_exp1.jpg}
+\includegraphics[width=8cm]{BERTf1_exp1.jpg} \\
+\includegraphics[width=8cm]{BERTf2_exp1.jpg}
+\includegraphics[width=8cm]{BERTf3_exp1.jpg}
+\caption{Intercept (beta0) and BERT's features MCMC convergence}
+  \label{BERTfMCMC}
+\end{figure}
 
 \begin{figure}
 \includegraphics[width=8cm]{BERTFeaturesScatterPlot.png}
@@ -94,7 +103,49 @@ Regarding the BERT features, we decided to go with normal distributions, using t
   \label{BERTf}
 \end{figure}
 
-Therefore, we decided to drop the first two BERT features, TODO: make sure when re-run with cosine the same is true. In doing so, we also found that PR and MNR were not significant, as we can see in ... TODO. Finally, we decided to also drop these two features, and re-run the MCMC. This time, .... TODO ...   We also realized that some of our features were still correlated, but because all of them appeared to be significant, we included interaction terms .... TODO .... Our best and final experiment .... I guess we should be able to remove some individual feature terms .... TODO ....
+\begin{figure}
+\includegraphics[width=8cm]{posteriors_bdata_02.jpg}
+\includegraphics[width=8cm]{pposteriors_bdata_02.jpg}
+\caption{PR and MNR Posteriors from Experiment \#3}
+  \label{PR_MNR_Posteriors}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=8cm]{delta_PR_bdata_02.jpg}
+\includegraphics[width=8cm]{delta_MNR_bdata_02.jpg}
+\caption{PR and MNR Deltas from Experiment \#3}
+  \label{PR_MNR_Deltas}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=8cm]{posteriors_bdata_03.jpg}
+\includegraphics[width=8cm]{pposteriors_bdata_03.jpg}
+\caption{Posteriors from Experiment \#4}
+  \label{Exp4}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=8cm]{Intercept_exp4.jpg}
+\includegraphics[width=8cm]{ReviewerDevExp4.jpg} \\
+\includegraphics[width=8cm]{AvgRevLenExp4.jpg}
+\includegraphics[width=8cm]{BERTExp4.jpg}
+\caption{MCMCs from Experiment \#4}
+  \label{Exp4MCMC}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=8cm]{corrplot.png}
+\caption{Correlation Matrix Between Features}
+  \label{corr}
+\end{figure}
+
+corrplot
+
+Finally, we decided to also drop these two features, and re-run the MCMC. This time, we get modes outside of the HDI for all features (figure \ref{Exp4}), with that HDI itself being pretty narrow, and the convergence is also very good (figure \ref{Exp4MCMC}). In particular, the standardized Reviewer Deviation mode is 0.187, which means that the probability of a review being fake increases slightly when this feature increases. On the other hand, the mode for average review length per user is -0.738, meaning that the probability of a review being fake decreases when the user who wrote it writes longer reviews, which was also the expected behavior. BERT's mode is 1.12, and while we cannot really interpret it, it seems BERT did a good job extracting some kind of info from the text alone that allows to help distinguish between real and fake reviews. Last but not least, the intercept's mode is -3.74, which has the highest absolute value and tells us that the model gives anyone the benefit of the doubt, which is desired.
+
+However, we note that our remaining features are still correlated (figure \ref{corr}), which makes this kind of mode analysis not ideal. We tried to include an interaction term 
+
+.... TODO .... Our best and final experiment .... I guess we should be able to remove some individual feature terms .... TODO ....
 
 \vspace{2mm}
 
