@@ -47,3 +47,59 @@ Good results in terms of predictions, chains converged and it seems that avg_pos
 ------------------------------------------------------
 
 TODO: Include hyperparameters for Experiments 3 and 4 ("bdata_03" and "bdata_04")
+
+############ SEAN'S EXPERIMENTS? 
+##### Experiment Number 3: 
+
+xName = c("Reviewer_deviation", "avg_revL", "fBERT2")
+# The first of these modes and stds is for the intercept
+PRIORS_MODES = c(0.021997, 1, -1, -0.3729589, 0.3562961, -0.5015929, -0.3729589, 1, 1)
+PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
+GUESS_BETA_A = 1  # Guess is a beta
+GUESS_BETA_B = 9
+GUESS_MULTIPL = 0.2  # Importance of random guess part
+DO_VARIABLE_SELECTION = TRUE
+# There is no theta for the intercept
+DELTAS_THETAS = c(0.5, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9)
+BETA_DIR_NAME = "bdata_P_02"
+# this was technically swapped to bdata_03, but we changed the name after 
+
+############### Experiment 4: 
+
+Pedro's bdata_p_02 experiment run without max cosine and adding an interaction between avg_L and fBERT2. 
+We also lowered the deltas for the variables in the interaction term, and raised the interaction term delta as shown below 
+
+
+xName = c("Reviewer_deviation", "avg_revL", "fBERT2","B2_len_int")
+# The first of these modes and stds is for the intercept
+PRIORS_MODES = c(0.021997, 1, -1, -0.3729589, 0 ,0.3562961, -0.5015929, -0.3729589, 1, 1)
+PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
+GUESS_BETA_A = 1  # Guess is a beta
+GUESS_BETA_B = 9
+GUESS_MULTIPL = 0.2  # Importance of random guess part
+DO_VARIABLE_SELECTION = TRUE
+# There is no theta for the intercept
+DELTAS_THETAS = c(0.5, 0.9, 0.5, 0.5, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9)
+BETA_DIR_NAME = "bdata_04"
+
+########### Experiment 5: 
+
+> SEED1 = 12
+> SEED2 = 3
+> SEED3 = 7
+> xName = c("Reviewer_deviation", "fBERT2","max_cos","cos_BERT_int")
+> # The first of these modes and stds is for the intercept
+> PRIORS_MODES = c(0.021997, 1, -1, -0.3729589, 0 ,0.3562961, -0.5015929, -0.3729589, 1, 1)
+> PRIORS_STDS = c(1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2, 1/2^2)
+> DO_ROBUST = TRUE  # If true, change the beta distrib for the guess below
+> GUESS_BETA_A = 1  # Guess is a beta
+> GUESS_BETA_B = 9
+> GUESS_MULTIPL = 0.2  # Importance of random guess part
+> DO_VARIABLE_SELECTION = TRUE
+> # There is no theta for the intercept
+> DELTAS_THETAS = c(0.5, 0.9, 0.5, 0.5, 0.9, 0.9, 0.9, 0.9, 0.9, 0.9)
+> BETA_DIR_NAME = "bdata_05"
+
+
