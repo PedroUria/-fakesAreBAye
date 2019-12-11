@@ -7,27 +7,32 @@ from sklearn.metrics import accuracy_score, recall_score
 USE_MODE, USE_MODE_THRESHOLD = False, 0.5  # This means use mode as coefficient and do regular logistic regression.
 # logits greater or equal than THRESHOLD are considered to be fake reviews
 USE_SAMPLES = True  # This means getting one z for each sampled betas, then use the mode of distribution and apply
-APPLY_MODE, APPLY_MEAN, APPLY_MAX, USE_SAMPLES_THRESHOLD = True, False, False, 0.5  # sigmoid on this (APPLY_MODE)
+APPLY_MODE, APPLY_MEAN, APPLY_MAX, USE_SAMPLES_THRESHOLD = False, True, False, 0.5  # sigmoid on this (APPLY_MODE)
 # Another option is getting one logit for each sample and using the mean (APPLY_MEAN)
 # Another option is getting one prediction for each sample and then using the mode (APPLY_MAX)
+DROP_FIRST_N_SAMPLES = 1000
 
 # TODO: Use logits from USE_SAMPLES APPLY_MEAN before taking the mean, and train a logistic regression with that (crazy I know)
 
-BETA_DIR_NAME = "bdata_Pedro_02"
+BETA_DIR_NAME = "bdata_04"
 # This FEATURES needs to correspond with the betas (first element is beta1, second is beta2, etc...)
-FEATURES = ["Reviewer_deviation", 'avg_posR', 'avg_revL', 'MNR', 'fBERT0', 'fBERT1', 'fBERT2']
+FEATURES = ["Reviewer_deviation", "avg_revL", "fBERT2", "B2_len_int"]
 DO_ROBUST, GUESS_MULTIPL = False, 0.2
 DO_VARIABLE_SELECTION = False
 
 data_test = pd.read_csv('prep_data/data_test.csv')
+for column_name in FEATURES:
+    if column_name not in data_test.columns:
+        column_names_interaction = input("There seems to be an interaction term called {}. Please enter the column names that are interacting: ")
+        data_test[column_name] = data_test[column_names_interaction.split()[0]] * data_test[column_names_interaction.split()[1]]
 y = data_test["Fake"].values
-betas_samples = {"Intercept": pd.read_csv(BETA_DIR_NAME + "/" + "beta0.csv")["x"].values}
+betas_samples = {"Intercept": pd.read_csv(BETA_DIR_NAME + "/" + "beta0.csv")["x"].values[DROP_FIRST_N_SAMPLES:]}
 for i in range(len(FEATURES)):
-    betas_samples[FEATURES[i]] = pd.read_csv(BETA_DIR_NAME + "/" + "beta{}.csv".format(i + 1))["x"].values
-deltas_samples = {"Intercept": pd.read_csv(BETA_DIR_NAME + "/" + "delta0.csv")["x"].values}
+    betas_samples[FEATURES[i]] = pd.read_csv(BETA_DIR_NAME + "/" + "beta{}.csv".format(i + 1))["x"].values[DROP_FIRST_N_SAMPLES:]
+deltas_samples = {"Intercept": pd.read_csv(BETA_DIR_NAME + "/" + "delta0.csv")["x"].values[DROP_FIRST_N_SAMPLES:]}
 for i in range(len(FEATURES)):
-    deltas_samples[FEATURES[i]] = pd.read_csv(BETA_DIR_NAME + "/" + "delta{}.csv".format(i + 1))["x"].values
-guess_samples = pd.read_csv(BETA_DIR_NAME + "/" + "guess.csv")["x"].values
+    deltas_samples[FEATURES[i]] = pd.read_csv(BETA_DIR_NAME + "/" + "delta{}.csv".format(i + 1))["x"].values[DROP_FIRST_N_SAMPLES:]
+guess_samples = pd.read_csv(BETA_DIR_NAME + "/" + "guess.csv")["x"].values[DROP_FIRST_N_SAMPLES:]
 
 if USE_MODE:
 
@@ -63,7 +68,6 @@ if USE_MODE:
         logits_copy[logits_copy < USE_MODE_THRESHOLD] = 0
         print("Accuracy:", accuracy_score(y, logits_copy), ", Recall:", recall_score(y, logits_copy))
         print(pd.crosstab(y, logits_copy, rownames=['True'], colnames=['Predicted'], margins=True))
-
 
 if USE_SAMPLES:
 
