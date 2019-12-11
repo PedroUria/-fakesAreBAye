@@ -2,7 +2,7 @@ from time import time
 import numpy as np
 import pandas as pd
 from scipy import stats
-from sklearn.metrics import accuracy_score, recall_score
+from sklearn.metrics import accuracy_score, recall_score, roc_auc_score
 
 USE_MODE, USE_MODE_THRESHOLD = False, 0.5  # This means use mode as coefficient and do regular logistic regression.
 # logits greater or equal than THRESHOLD are considered to be fake reviews
@@ -129,3 +129,5 @@ if USE_SAMPLES:
             y_pred = logits_copy.reshape(-1)
         print("Accuracy:", accuracy_score(y, y_pred), ", Recall:", recall_score(y, y_pred))
         print(pd.crosstab(y, y_pred, rownames=['True'], colnames=['Predicted'], margins=True))
+        auc = roc_auc_score(y, logits)
+        print('AUC: %.3f' % auc)
